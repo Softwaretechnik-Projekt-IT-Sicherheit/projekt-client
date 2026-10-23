@@ -1,0 +1,41 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Lint, Format, Types & Security
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: uv installieren
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Dependencies installieren
+        run: uv sync --locked
+
+      - name: Linting inkl. Security-Regeln (ruff)
+        run: uv run ruff check . --output-format=github
+
+      - name: Formatierung prüfen (ruff format)
+        run: uv run ruff format --check .
+
+      - name: Typprüfung (mypy)
+        run: uv run mypy src
+
+      - name: Dependencies auf bekannte Schwachstellen prüfen (pip-audit)
+        run: |
+          uv export --format requirements-txt --no-emit-project --no-hashes > requirements-audit.txt
+          uv run pip-audit -r requirements-audit.txt --strict

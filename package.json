@@ -1,0 +1,24 @@
+{
+  "name": "wallet",
+  "private": true,
+  "description": "Bitcoin Hot Wallet – Script-Runner für die Python-Entwicklung (uv)",
+  "scripts": {
+    "setup": "uv sync",
+    "start": "uv run python -m wallet",
+    "smoke": "uv run python -m wallet --version",
+
+    "test": "uv run pytest",
+    "test:cov": "uv run pytest --cov=wallet --cov-report=term-missing",
+
+    "lint": "uv run ruff check .",
+    "lint:fix": "uv run ruff check . --fix",
+    "format": "uv run ruff format .",
+    "format:check": "uv run ruff format --check .",
+    "typecheck": "uv run mypy src",
+    "audit": "uv run pip-audit --skip-editable",
+
+    "check": "uv run python scripts/check.py",
+    "check:fix": "uv run python scripts/check.py --fix",
+    "check:tests": "uv run python scripts/check.py --tests"
+  }
+}
