@@ -23,8 +23,8 @@ QUALITY_FIX = [
 ]
 
 TESTS = [
-    ("Tests (pytest)", ["pytest", "--cov=hot_wallet", "--cov-report=term-missing"]),
-    ("Smoke-Test", [sys.executable, "-m", "hot_wallet", "--version"]),
+    ("Tests (pytest)", ["pytest", "--cov=wallet", "--cov-report=term-missing"]),
+    ("Smoke-Test", [sys.executable, "-m", "wallet", "--version"]),
 ]
 
 

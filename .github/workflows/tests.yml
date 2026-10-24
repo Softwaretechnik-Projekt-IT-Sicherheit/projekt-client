@@ -32,7 +32,7 @@ jobs:
         run: uv sync --locked
 
       - name: Tests ausführen (pytest + Coverage)
-        run: uv run pytest --cov=hot_wallet --cov-report=term-missing
+        run: uv run pytest --cov=wallet --cov-report=term-missing
 
       - name: Smoke-Test – startet die Anwendung fehlerfrei?
-        run: uv run python -m hot_wallet --version
+        run: uv run python -m wallet --version

@@ -3,7 +3,7 @@
 import subprocess  # noqa: S404
 import sys
 
-from hot_wallet.__main__ import main
+from wallet.__main__ import main
 
 
 def test_main_returns_zero() -> None:
@@ -12,10 +12,10 @@ def test_main_returns_zero() -> None:
 
 def test_module_starts_without_error() -> None:
     result = subprocess.run(  # noqa: S603
-        [sys.executable, "-m", "hot_wallet", "--version"],
+        [sys.executable, "-m", "wallet", "--version"],
         capture_output=True,
         text=True,
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    assert "hot-wallet" in result.stdout
+    assert "wallet" in result.stdout
