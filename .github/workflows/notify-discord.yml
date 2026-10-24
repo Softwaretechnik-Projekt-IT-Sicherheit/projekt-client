@@ -6,6 +6,7 @@ on:
       - "Code Quality"
       - "Tests"
       - "Lint Commit Messages & PR Title"
+      - "Build"
     types: [completed]
 
 permissions: {}
@@ -23,12 +24,15 @@ jobs:
           WF_NAME: ${{ github.event.workflow_run.name }}
           CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           BRANCH: ${{ github.event.workflow_run.head_branch }}
+          ACTOR: ${{ github.event.workflow_run.triggering_actor.login }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
         run: |
           if [ "$CONCLUSION" = "success" ]; then
-            TEXT="✅ **$WF_NAME** erfolgreich auf \`$BRANCH\` – [Zum Workflow]($RUN_URL)"
+            TEXT="✅ **$WF_NAME** erfolgreich auf \`$BRANCH\` (von $ACTOR) – [Zum Workflow]($RUN_URL)"
+          elif [ "$WF_NAME" = "Build" ]; then
+            TEXT="🚨 **BUILD FEHLGESCHLAGEN** auf \`$BRANCH\` (von $ACTOR) – die App lässt sich nicht bauen! Nicht mergen! [Zum Workflow]($RUN_URL)"
           else
-            TEXT="❌ **$WF_NAME** fehlgeschlagen auf \`$BRANCH\` – [Zum Workflow]($RUN_URL)"
+            TEXT="❌ **$WF_NAME** fehlgeschlagen auf \`$BRANCH\` (von $ACTOR) – [Zum Workflow]($RUN_URL)"
           fi
 
           jq -n --arg content "$TEXT" '{content: $content, flags: 4}' \

@@ -1,0 +1,111 @@
+name: Build
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1) Paket bauen und in einer leeren Umgebung (ohne Quellcode) testen.
+  #    Findet fehlende Module, fehlende Dependencies und kaputte Entry-Points.
+  # ---------------------------------------------------------------------------
+  package:
+    name: Paket bauen & sauber installieren
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: uv installieren
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Wheel & sdist bauen
+        run: uv build
+
+      - name: Wheel in leere Umgebung installieren
+        run: |
+          uv venv "$RUNNER_TEMP/clean" --python 3.14
+          uv pip install --python "$RUNNER_TEMP/clean" dist/*.whl
+
+      - name: Installierte App starten (ohne Zugriff auf src/)
+        working-directory: ${{ runner.temp }}
+        run: |
+          "$RUNNER_TEMP/clean/bin/wallet" --version
+          "$RUNNER_TEMP/clean/bin/python" -m wallet --version
+
+      - name: Build-Fehler melden
+        if: failure()
+        run: |
+          echo "::error title=BUILD FEHLGESCHLAGEN::Das Paket lässt sich nicht bauen oder startet nach der Installation nicht. Nicht mergen, bevor das behoben ist!"
+
+  # ---------------------------------------------------------------------------
+  # 2) Startfähige Binary pro Betriebssystem bauen und ausführen.
+  # ---------------------------------------------------------------------------
+  binary:
+    name: Binary (${{ matrix.os }})
+    needs: package
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: uv installieren
+        uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+
+      - name: Laufzeit-Dependencies installieren (ohne Dev-Tools)
+        run: uv sync --locked --no-dev
+
+      - name: Launcher erzeugen
+        run: |
+          printf 'from wallet import main\n\nraise SystemExit(main())\n' > "$RUNNER_TEMP/launcher.py"
+
+      - name: Binary bauen (PyInstaller)
+        run: |
+          uv run --no-dev --with pyinstaller pyinstaller \
+            --onefile \
+            --name wallet \
+            --paths "$GITHUB_WORKSPACE/src" \
+            --collect-submodules wallet \
+            --distpath dist \
+            --workpath "$RUNNER_TEMP/pyi-build" \
+            --specpath "$RUNNER_TEMP" \
+            "$RUNNER_TEMP/launcher.py"
+
+      - name: Binary starten (Smoke-Test)
+        run: |
+          BIN="dist/wallet"
+          if [ "$RUNNER_OS" = "Windows" ]; then BIN="dist/wallet.exe"; fi
+          "$BIN" --version
+
+      - name: Build-Fehler melden
+        if: failure()
+        run: |
+          echo "::error title=BUILD FEHLGESCHLAGEN (${{ runner.os }})::Die Binary für ${{ runner.os }} lässt sich nicht bauen oder starten. Nicht mergen, bevor das behoben ist!"
+
+      - name: Binary als Artefakt hochladen
+        uses: actions/upload-artifact@v5
+        with:
+          name: wallet-${{ runner.os }}
+          path: dist/wallet*
+          if-no-files-found: error
+          retention-days: 14
