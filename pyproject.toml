@@ -25,7 +25,6 @@ dev = [
     "ruff>=0.17.2",
 ]
 
-# ─── Diese Abschnitte unten an deine pyproject.toml anhängen ───
 
 [tool.ruff]
 line-length = 100
@@ -48,7 +47,7 @@ select = [
 
 [tool.mypy]
 strict = true
-packages = ["hot_wallet"]
+packages = ["wallet"]
 mypy_path = "src"
 
 [tool.pytest.ini_options]
@@ -57,7 +56,7 @@ addopts = "-ra --strict-markers"
 
 [tool.coverage.run]
 branch = true
-source = ["hot_wallet"]
+source = ["wallet"]
 
 [tool.coverage.report]
 show_missing = true
