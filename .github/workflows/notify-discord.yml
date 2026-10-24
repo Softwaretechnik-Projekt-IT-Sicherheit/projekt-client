@@ -1,0 +1,33 @@
+name: Discord Notifications
+
+on:
+  workflow_run:
+    workflows:
+      - "Code Quality"
+      - "Tests"
+      - "Lint Commit Messages & PR Title"
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    if: contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)
+
+    steps:
+      - name: Discord benachrichtigen
+        env:
+          WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          WF_NAME: ${{ github.event.workflow_run.name }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        run: |
+          if [ "$CONCLUSION" = "success" ]; then
+            TEXT="✅ **$WF_NAME** erfolgreich"
+          else
+            TEXT="❌ **$WF_NAME** fehlgeschlagen – [Details]($RUN_URL)"
+          fi
+
+          jq -n --arg content "$TEXT" '{content: $content, flags: 4}' \
+          | curl -sS --fail-with-body -H "Content-Type: application/json" -d @- "$WEBHOOK"
