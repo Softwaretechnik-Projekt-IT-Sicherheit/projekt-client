@@ -9,11 +9,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
-
 jobs:
   # ---------------------------------------------------------------------------
   # 1) Paket bauen und in einer leeren Umgebung (ohne Quellcode) testen.
@@ -107,10 +102,14 @@ jobs:
         run: |
           echo "::error title=BUILD FEHLGESCHLAGEN (${{ runner.os }})::Die Binary für ${{ runner.os }} lässt sich nicht bauen oder starten. Nicht mergen, bevor das behoben ist!"
 
+      # Nur nach einem Merge auf develop/main hochladen – PR-Testläufe bauen
+      # und prüfen die Binary, speichern sie aber nicht.
+      # develop: 7 Tage (Zwischenstände), main: 90 Tage (Releases)
       - name: Binary als Artefakt hochladen
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v5
         with:
-          name: wallet-${{ runner.os }}
+          name: wallet-${{ github.ref_name }}-${{ runner.os }}
           path: dist/wallet*
           if-no-files-found: error
-          retention-days: 14
+          retention-days: ${{ github.ref_name == 'main' && 90 || 7 }}
