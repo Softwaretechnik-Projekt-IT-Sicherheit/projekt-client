@@ -28,6 +28,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+        # fastecdsa (via bitcoinlib) braucht GMP
+      - name: Systemabhängigkeiten installieren (GMP, Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgmp-dev
+
+      - name: Systemabhängigkeiten installieren (GMP, macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gmp
+          echo "CFLAGS=-I$(brew --prefix gmp)/include" >> "$GITHUB_ENV"
+          echo "LDFLAGS=-L$(brew --prefix gmp)/lib" >> "$GITHUB_ENV"
+
       - name: uv installieren
         uses: astral-sh/setup-uv@v8.1.0
         with:

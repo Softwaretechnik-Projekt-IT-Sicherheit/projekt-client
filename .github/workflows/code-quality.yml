@@ -23,6 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Systemabhängigkeiten installieren (GMP)
+        run: sudo apt-get update && sudo apt-get install -y libgmp-dev
+
       - name: uv installieren
         uses: astral-sh/setup-uv@v8.1.0
         with:

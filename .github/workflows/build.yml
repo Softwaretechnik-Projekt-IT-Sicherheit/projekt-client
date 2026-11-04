@@ -22,6 +22,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # fastecdsa (via bitcoinlib) wird aus dem Quellcode gebaut und braucht GMP
+      - name: Systemabhängigkeiten installieren (GMP)
+        run: sudo apt-get update && sudo apt-get install -y libgmp-dev
+
       - name: uv installieren
         uses: astral-sh/setup-uv@v8.1.0
         with:
@@ -66,6 +70,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      # fastecdsa (via bitcoinlib) braucht GMP. Unter Windows nutzt bitcoinlib
+      # stattdessen das reine Python-Paket ecdsa, dort ist nichts zu tun.
+      - name: Systemabhängigkeiten installieren (GMP, Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgmp-dev
+
+      - name: Systemabhängigkeiten installieren (GMP, macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install gmp
+          # Homebrew liegt unter /opt/homebrew, clang sucht dort nicht von selbst
+          echo "CFLAGS=-I$(brew --prefix gmp)/include" >> "$GITHUB_ENV"
+          echo "LDFLAGS=-L$(brew --prefix gmp)/lib" >> "$GITHUB_ENV"
 
       - name: uv installieren
         uses: astral-sh/setup-uv@v8.1.0
