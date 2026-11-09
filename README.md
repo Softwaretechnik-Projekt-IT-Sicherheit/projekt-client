@@ -25,6 +25,7 @@ Der Workflow zum Wechseln in die neue Feature-Branch sieht dann wie folgt aus:
 git checkout develop                              # Wechseln in die Source-Branch develop
 git pull origin develop                           # Neuesten Stand von develop pullen
 git checkout -b feature/T0001-name-des-features   # Erstellen der neuen Branch
+flyway -configFiles="flyway.toml" migrate	  # Datenbank erstellen
 npm run setup                                     # Dependencies auf den neuesten Stand bringen
 ```
 
