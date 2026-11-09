@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-wallet = "wallet.__main__:main"
+wallet = "wallet.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.13.5,<0.14.0"]
@@ -57,6 +57,9 @@ mypy_path = "src"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+markers = [
+    "smoke: Starttest, NotImplementedError wird hier nie als xfail gewertet",
+]
 
 [tool.coverage.run]
 branch = true
@@ -64,4 +67,5 @@ source = ["wallet"]
 
 [tool.coverage.report]
 show_missing = true
+exclude_also = ["raise NotImplementedError"]
 # fail_under = 80   # aktivieren, sobald es nennenswert Code gibt
