@@ -4,7 +4,6 @@ from wallet.domain import Network, Transaction, Wallet
 
 
 class KeyManager:
-
     def generate_mnemonic(self, words: int = 12) -> str:
         raise NotImplementedError
 

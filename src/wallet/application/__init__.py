@@ -1,8 +1,8 @@
 """Application-Schicht: Anwendungsfälle (Services), die Domain und Infrastructure verbinden."""
 
-from wallet.application.AuthService import AuthService
-from wallet.application.Session import Session
-from wallet.application.TransactionValidator import TransactionValidator
-from wallet.application.WalletService import WalletService
+from wallet.application.auth_service import AuthService
+from wallet.application.session import Session
+from wallet.application.transaction_validator import TransactionValidator
+from wallet.application.wallet_service import WalletService
 
 __all__ = ["AuthService", "Session", "TransactionValidator", "WalletService"]

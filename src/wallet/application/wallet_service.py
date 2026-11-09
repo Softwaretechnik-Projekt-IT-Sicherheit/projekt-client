@@ -1,13 +1,13 @@
-from wallet.application.Session import Session
-from wallet.application.TransactionValidator import TransactionValidator
-from wallet.domain.Address import Address
-from wallet.domain.Amount import Amount
-from wallet.domain.Transaction import Transaction
-from wallet.domain.Type import Network
-from wallet.domain.Wallet import Wallet
-from wallet.infrastructure.BlockchainClient import BlockchainClient
-from wallet.infrastructure.Database import Database
-from wallet.infrastructure.KeyManager import KeyManager
+from wallet.application.session import Session
+from wallet.application.transaction_validator import TransactionValidator
+from wallet.domain.address import Address
+from wallet.domain.amount import Amount
+from wallet.domain.enums import Network
+from wallet.domain.transaction import Transaction
+from wallet.domain.wallet import Wallet
+from wallet.infrastructure.blockchain_client import BlockchainClient
+from wallet.infrastructure.database import Database
+from wallet.infrastructure.key_manager import KeyManager
 
 
 class WalletService:

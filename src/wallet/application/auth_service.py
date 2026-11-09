@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from wallet.application.Session import Session
+from wallet.application.session import Session
 from wallet.domain import User
 from wallet.infrastructure import CryptoService, Database
 
 
 class AuthService:
-
     def __init__(self, db: Database, crypto: CryptoService) -> None:
         self._db: Database = db
         self._crypto: CryptoService = crypto

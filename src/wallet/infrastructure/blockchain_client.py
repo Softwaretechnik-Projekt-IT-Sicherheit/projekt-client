@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from wallet.domain import Amount, Network
 
 
@@ -13,7 +15,7 @@ class BlockchainClient:
     def get_balances(self, addresses: list[str]) -> dict[str, Amount]:
         raise NotImplementedError
 
-    def get_utxos(self, addresses: list[str]) -> list[dict]:
+    def get_utxos(self, addresses: list[str]) -> list[dict[str, Any]]:
         raise NotImplementedError
 
     def broadcast(self, raw_hex: str) -> str:

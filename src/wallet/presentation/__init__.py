@@ -1,6 +1,6 @@
 """Presentation-Schicht: Kommandozeilen-Oberfläche und Texte."""
 
-from wallet.presentation.CLI import CLI
-from wallet.presentation.Locale import Locale
+from wallet.presentation.cli import CLI
+from wallet.presentation.locale import Locale
 
 __all__ = ["CLI", "Locale"]

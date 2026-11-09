@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 from wallet.application import AuthService, Session, WalletService
-from wallet.presentation.Locale import Locale
+from wallet.presentation.locale import Locale
 
 
 class CLI:
-
     def __init__(self, locator: Locale, auth: AuthService, wallets: WalletService) -> None:
         self._locator: Locale = locator
         self._auth: AuthService = auth

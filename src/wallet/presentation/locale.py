@@ -6,7 +6,7 @@ class Locale:
         self._lang: str = lang
         self._catalog: dict[str, str] = {}
 
-    def get(self, key: str, **kwargs) -> str:
+    def get(self, key: str, **kwargs: object) -> str:
         raise NotImplementedError
 
     def help(self, command: str) -> str:

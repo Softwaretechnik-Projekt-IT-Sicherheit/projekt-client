@@ -1,10 +1,9 @@
-from wallet.domain.Amount import Amount
-from wallet.domain.Type import Network
-from wallet.domain.Wallet import Wallet
+from wallet.domain.amount import Amount
+from wallet.domain.enums import Network
+from wallet.domain.wallet import Wallet
 
 
 class TransactionValidator:
-
     def validate_address(self, address: str, network: Network) -> None:
         raise NotImplementedError
 

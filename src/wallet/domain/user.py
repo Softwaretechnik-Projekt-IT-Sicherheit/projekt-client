@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from wallet.domain.Wallet import Wallet
+from wallet.domain.wallet import Wallet
 
 
 @dataclass

@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from wallet.domain.Address import Address
-from wallet.domain.Amount import Amount
-from wallet.domain.Type import Network
+from wallet.domain.address import Address
+from wallet.domain.amount import Amount
+from wallet.domain.enums import Network
 
 
 @dataclass
 class Wallet:
-
     id: int
     name: str
     network: Network

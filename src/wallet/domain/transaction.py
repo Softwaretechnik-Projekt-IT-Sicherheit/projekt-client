@@ -4,16 +4,15 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from wallet.domain.Amount import Amount
-from wallet.domain.Type import TxStatus
+from wallet.domain.amount import Amount
+from wallet.domain.enums import TxStatus
 
 if TYPE_CHECKING:
-    from wallet.domain.Address import Address
+    from wallet.domain.address import Address
 
 
 @dataclass
 class Transaction:
-
     txid: str | None = None
     to_address: list[str] = field(default_factory=list)
     amount: list[Amount] = field(default_factory=list)

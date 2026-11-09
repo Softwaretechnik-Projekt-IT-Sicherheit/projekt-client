@@ -4,10 +4,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from wallet.domain.Amount import Amount
+from wallet.domain.amount import Amount
 
 if TYPE_CHECKING:
-    from wallet.domain.Transaction import Transaction
+    from wallet.domain.transaction import Transaction
 
 
 @dataclass
