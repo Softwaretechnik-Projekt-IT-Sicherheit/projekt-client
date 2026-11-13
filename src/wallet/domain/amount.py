@@ -11,6 +11,9 @@ class Amount:
     def from_str(cls, text: str) -> Amount:
         raise NotImplementedError
 
+    def from_int(cls, value: int) -> Amount:
+        raise NotImplementedError
+
     def to_btc(self) -> str:
         raise NotImplementedError
 
