@@ -38,7 +38,6 @@ def make_user(crypto: CryptoService, password: str = PASSWORD) -> User:
 
 
 def test_kdf_parameters_documented_and_sane() -> None:
-    # Ziel: ca. 0,2–0,5 s pro Ableitung -> scrypt N=2^16, r=8, p=1 (OWASP)
     assert SCRYPT_N >= 2**15
     assert SCRYPT_R >= 8
     assert SCRYPT_P >= 1
@@ -56,7 +55,6 @@ def test_derive_key_with_real_parameters() -> None:
     key = crypto.derive_key(PASSWORD, crypto.generate_salt())
     duration = time.perf_counter() - start
     assert len(key) == KEY_LENGTH
-    # Zielbereich 0,2–0,5 s; großzügige Obergrenze, damit langsame CI-Runner nicht fehlschlagen
     assert duration < 3
 
 

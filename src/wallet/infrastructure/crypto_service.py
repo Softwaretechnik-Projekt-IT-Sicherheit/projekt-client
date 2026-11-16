@@ -21,9 +21,6 @@ from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from wallet.domain import User
 
 # --- KDF-Parameter (dokumentiert zu T0005) ------------------------------------
-# scrypt nach OWASP Cheat Sheet: N=2^16, r=8, p=1.
-# Ziel: ca. 0,2–0,5 s pro Ableitung auf aktueller Hardware
-# (gemessen auf der Entwicklungsmaschine: ~0,35 s, ~64 MiB RAM pro Ableitung).
 SCRYPT_N = 2**16
 SCRYPT_R = 8
 SCRYPT_P = 1
@@ -48,8 +45,6 @@ class CryptoService:
 
     def derive_key(self, password: str, salt: bytes) -> bytes:
         """Leitet mit scrypt einen 32-Byte-Masterkey aus Passwort + Salt ab.
-
-        Kosten: SCRYPT_N/R/P (Ziel ca. 0,2–0,5 s pro Aufruf).
         """
         if len(salt) != SALT_LENGTH:
             raise ValueError(f"Salt muss genau {SALT_LENGTH} Byte lang sein")
