@@ -57,7 +57,7 @@ def test_derive_key_with_real_parameters() -> None:
     duration = time.perf_counter() - start
     assert len(key) == KEY_LENGTH
     # Zielbereich 0,2–0,5 s; großzügige Obergrenze, damit langsame CI-Runner nicht fehlschlagen
-    assert duration < 10
+    assert duration < 3
 
 
 def test_generate_salt() -> None:
