@@ -226,4 +226,4 @@ __pycache__/
 .env
 *.wallet
 
-.idea/*
+.idea/
