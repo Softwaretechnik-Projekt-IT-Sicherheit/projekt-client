@@ -37,6 +37,8 @@ def make_user(crypto: CryptoService, password: str = PASSWORD) -> User:
     return User(id=1, username="alice", password_hash=password_hash, salt=salt)
 
 
+# Prüft, dass alle KDF-Parameter (scrypt, HKDF) dokumentierte, sichere Werte haben
+# und dass Passwort-Hash und Verschlüsselungsschlüssel verschiedene Info-Strings nutzen
 def test_kdf_parameters_documented_and_sane() -> None:
     assert SCRYPT_N >= 2**15
     assert SCRYPT_R >= 8
@@ -49,6 +51,8 @@ def test_kdf_parameters_documented_and_sane() -> None:
     assert HKDF_INFO_PASSWORD_HASH != HKDF_INFO_ENCRYPTION_KEY
 
 
+# Prüft, dass die scrypt-Schlüsselableitung mit echten Parametern funktioniert
+# und in akzeptabler Zeit (< 3s) abläuft
 def test_derive_key_with_real_parameters() -> None:
     crypto = CryptoService()
     start = time.perf_counter()
@@ -58,6 +62,7 @@ def test_derive_key_with_real_parameters() -> None:
     assert duration < 3
 
 
+# Prüft, dass generate_salt() zufällige, einzigartige Salts der korrekten Länge erzeugt
 def test_generate_salt() -> None:
     crypto = CryptoService()
     salt1, salt2 = crypto.generate_salt(), crypto.generate_salt()
@@ -65,6 +70,8 @@ def test_generate_salt() -> None:
     assert salt1 != salt2
 
 
+# Prüft Determinismus (gleiche Eingabe → gleicher Schlüssel) und
+# Sensitivität (andere Passwörter/Salts → andere Schlüssel)
 def test_derive_key_deterministic_and_sensitive(fast_scrypt: None) -> None:
     crypto = CryptoService()
     salt = crypto.generate_salt()
@@ -73,11 +80,14 @@ def test_derive_key_deterministic_and_sensitive(fast_scrypt: None) -> None:
     assert crypto.derive_key(PASSWORD, salt) != crypto.derive_key(PASSWORD, crypto.generate_salt())
 
 
+# Prüft, dass derive_key() eine ValueError wirft, wenn das Salt nicht die richtige Länge hat
 def test_derive_key_rejects_wrong_salt_length(fast_scrypt: None) -> None:
     with pytest.raises(ValueError, match="Salt"):
         CryptoService().derive_key(PASSWORD, b"zu-kurz")
 
 
+# Prüft, dass Passwort-Hash und Verschlüsselungsschlüssel trotz gleichem Masterkey
+# verschiedene Werte haben (Domain-Separation durch HKDF-Info-Strings)
 def test_password_hash_and_encryption_key_are_separate(fast_scrypt: None) -> None:
     crypto = CryptoService()
     salt = crypto.generate_salt()
@@ -88,6 +98,8 @@ def test_password_hash_and_encryption_key_are_separate(fast_scrypt: None) -> Non
     assert password_hash != encryption_key
 
 
+# Prüft Roundtrip: Verschlüsselung + Entschlüsselung gibt die Originaldaten zurück.
+# Testet verschiedene Datenlängen (inkl. leer und 256 Byte)
 def test_encrypt_decrypt_roundtrip(fast_scrypt: None) -> None:
     crypto = CryptoService()
     key = crypto.derive_encryption_key(PASSWORD, crypto.generate_salt())
@@ -98,6 +110,8 @@ def test_encrypt_decrypt_roundtrip(fast_scrypt: None) -> None:
         assert crypto.decrypt(encrypted, key) == data
 
 
+# Prüft, dass encrypt() bei gleichen Eingaben verschiedene Ciphertexte erzeugt
+# (weil die Nonce zufällig generiert wird)
 def test_encrypt_uses_random_nonce() -> None:
     crypto = CryptoService()
     key = os.urandom(KEY_LENGTH)
@@ -105,6 +119,8 @@ def test_encrypt_uses_random_nonce() -> None:
     assert crypto.encrypt(data, key) != crypto.encrypt(data, key)
 
 
+# Prüft, dass decrypt() InvalidTag wirft, wenn der Ciphertext manipuliert wurde
+# (Integritätsschutz durch GCM-Tag)
 def test_decrypt_tampered_ciphertext_raises() -> None:
     crypto = CryptoService()
     key = os.urandom(KEY_LENGTH)
@@ -114,6 +130,8 @@ def test_decrypt_tampered_ciphertext_raises() -> None:
         crypto.decrypt(bytes(encrypted), key)
 
 
+# Prüft, dass decrypt() InvalidTag wirft, wenn die Nonce manipuliert wurde
+# (Nonce ist Teil der Eingabe für die Entschlüsselung)
 def test_decrypt_tampered_nonce_raises() -> None:
     crypto = CryptoService()
     key = os.urandom(KEY_LENGTH)
@@ -123,6 +141,8 @@ def test_decrypt_tampered_nonce_raises() -> None:
         crypto.decrypt(bytes(encrypted), key)
 
 
+# Prüft, dass decrypt() InvalidTag wirft, wenn der falsche Schlüssel verwendet wird
+# (Authentizitätsschutz durch GCM)
 def test_decrypt_with_wrong_key_raises() -> None:
     crypto = CryptoService()
     key = os.urandom(KEY_LENGTH)
@@ -131,16 +151,20 @@ def test_decrypt_with_wrong_key_raises() -> None:
         crypto.decrypt(encrypted, os.urandom(KEY_LENGTH))
 
 
+# Prüft, dass decrypt() ValueError wirft, wenn die Eingabe zu kurz für Nonce + Tag ist
 def test_decrypt_too_short_raises() -> None:
     with pytest.raises(ValueError, match="zu kurz"):
         CryptoService().decrypt(b"kurz", os.urandom(KEY_LENGTH))
 
 
+# Prüft, dass encrypt() ValueError wirft, wenn der Schlüssel nicht 32 Byte lang ist
 def test_encrypt_rejects_wrong_key_length() -> None:
     with pytest.raises(ValueError, match="Schlüssel"):
         CryptoService().encrypt(b"x", b"0" * 16)
 
 
+# Prüft, dass verify_password() korrekte Passwörter akzeptiert und falsche ablehnt
+# (konstantzeitlicher Vergleich via hmac.compare_digest)
 def test_verify_password(fast_scrypt: None) -> None:
     crypto = CryptoService()
     user = make_user(crypto)
@@ -148,6 +172,8 @@ def test_verify_password(fast_scrypt: None) -> None:
     assert crypto.verify_password("falsches passwort", user) is False
 
 
+# Prüft, dass verify_password() False zurückgibt, wenn der gespeicherte Hash manipuliert wurde
+# (Sicherheit gegen Angriff auf die Datenbank)
 def test_verify_password_with_tampered_hash(fast_scrypt: None) -> None:
     crypto = CryptoService()
     user = make_user(crypto)
@@ -157,6 +183,8 @@ def test_verify_password_with_tampered_hash(fast_scrypt: None) -> None:
     assert crypto.verify_password(PASSWORD, user) is False
 
 
+# Prüft /PND 020/: Fehlermeldungen enthalten keine Passwörter, Schlüssel oder Klartexte
+# (Sicherheit: keine Secret-Leaks durch Exceptions)
 def test_error_messages_do_not_leak_secrets() -> None:
     # /PND 020/: keine Passwörter/Schlüssel in Fehlermeldungen
     crypto = CryptoService()
