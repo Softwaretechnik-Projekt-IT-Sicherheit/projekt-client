@@ -13,12 +13,17 @@ from __future__ import annotations
 import hmac
 import os
 
+from dotenv import load_dotenv
+
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 
 from wallet.domain import User
+
+# Lade Environment-Variablen aus .env.crypto
+load_dotenv(".env.crypto")
 
 # --- KDF-Parameter (dokumentiert zu T0005) ------------------------------------
 SCRYPT_N = 2**16
@@ -32,8 +37,9 @@ TAG_LENGTH = 16  # GCM-Authentifizierungs-Tag
 
 # HKDF-Info-Strings: domain-getrennte Ableitung von Passwort-Hash und
 # Verschlüsselungsschlüssel aus demselben scrypt-Masterkey (ein Salt pro User).
-HKDF_INFO_PASSWORD_HASH = b"wallet/T0005/password-hash"
-HKDF_INFO_ENCRYPTION_KEY = b"wallet/T0005/encryption-key"
+# Werden aus der Environment-Datei geladen
+HKDF_INFO_PASSWORD_HASH = os.environ.get("HKDF_INFO_PASSWORD_HASH", "wallet/password-hash").encode()
+HKDF_INFO_ENCRYPTION_KEY = os.environ.get("HKDF_INFO_ENCRYPTION_KEY", "wallet/encryption-key").encode()
 
 
 class CryptoService:
