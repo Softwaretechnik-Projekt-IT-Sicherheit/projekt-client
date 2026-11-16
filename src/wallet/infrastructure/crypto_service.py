@@ -13,12 +13,11 @@ from __future__ import annotations
 import hmac
 import os
 
-from dotenv import load_dotenv
-
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
+from dotenv import load_dotenv
 
 from wallet.domain import User
 
