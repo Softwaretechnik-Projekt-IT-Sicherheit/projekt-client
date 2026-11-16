@@ -29,6 +29,10 @@ Danach Terminal neu öffnen und prüfen:
 uv --version
 npm --version
 ```
+
+### Flyway (für die Datenbankerzeugung)
+
+Auf [Flayway Open Source](https://documentation.red-gate.com/flyway/reference/usage/flyway-open-source) sind die Downloads für die Software Flyway erhältlich.
  
 ## 2. Projekt klonen und einrichten
  
@@ -37,6 +41,7 @@ git clone <repo-url>
 cd <repo-name>
 git checkout develop
 npm run setup        # entspricht: uv sync
+flyway -configFiles="flyway.toml" migrate # erzeugt Datenbank
 ```
  
 `uv sync` lädt automatisch die richtige Python-Version (aus `.python-version`), erstellt die `.venv` und installiert alle Dependencies exakt nach `uv.lock`.
@@ -88,3 +93,17 @@ Bei jedem Push und PR auf `develop` und `main` laufen automatisch:
 | `lint-commits.yml` | Commit-Messages nach Conventional Commits |
 | `code-quality.yml` | Linting, Formatierung, Typen, Schwachstellen in Dependencies |
 | `tests.yml` | Tests auf Ubuntu, macOS und Windows + Starttest der Anwendung |
+
+
+## 6. Änderungen an der Datenbank
+
+Sollten Änderungen an der Datenbank notwendig sein, müssen die Änderungen in Form einer `.sql`-Datei in das Verzeichnis `databaseconf` gespeichert werden.
+
+> [!IMPORTANT]
+> Der Dateiname muss dem Format V*Versionsnummer*__*name*.sql
+
+Das Umsetzten der Änderung geschieht mit:
+
+```bash
+flyway -configFiles="flyway.toml" migrate
+```

@@ -3,7 +3,11 @@
 import subprocess  # noqa: S404
 import sys
 
-from wallet.__main__ import main
+import pytest
+
+from wallet.cli import main
+
+pytestmark = pytest.mark.smoke
 
 
 def test_main_returns_zero() -> None:
