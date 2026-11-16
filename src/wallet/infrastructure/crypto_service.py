@@ -39,7 +39,9 @@ TAG_LENGTH = 16  # GCM-Authentifizierungs-Tag
 # Verschlüsselungsschlüssel aus demselben scrypt-Masterkey (ein Salt pro User).
 # Werden aus der Environment-Datei geladen
 HKDF_INFO_PASSWORD_HASH = os.environ.get("HKDF_INFO_PASSWORD_HASH", "wallet/password-hash").encode()
-HKDF_INFO_ENCRYPTION_KEY = os.environ.get("HKDF_INFO_ENCRYPTION_KEY", "wallet/encryption-key").encode()
+HKDF_INFO_ENCRYPTION_KEY = os.environ.get(
+    "HKDF_INFO_ENCRYPTION_KEY", "wallet/encryption-key"
+).encode()
 
 
 class CryptoService:
@@ -50,8 +52,7 @@ class CryptoService:
         return os.urandom(SALT_LENGTH)
 
     def derive_key(self, password: str, salt: bytes) -> bytes:
-        """Leitet mit scrypt einen 32-Byte-Masterkey aus Passwort + Salt ab.
-        """
+        """Leitet mit scrypt einen 32-Byte-Masterkey aus Passwort + Salt ab."""
         if len(salt) != SALT_LENGTH:
             raise ValueError(f"Salt muss genau {SALT_LENGTH} Byte lang sein")
         kdf = Scrypt(salt=salt, length=KEY_LENGTH, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
