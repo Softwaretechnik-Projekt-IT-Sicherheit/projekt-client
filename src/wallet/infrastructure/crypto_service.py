@@ -7,10 +7,10 @@ class CryptoService:
     def derive_key(self, password: str, salt: bytes) -> bytes:
         raise NotImplementedError
 
-    def encrypt(self, data: bytes, key: bytes) -> bytes:
+    def encrypt(self, data: bytes) -> bytes:
         raise NotImplementedError
 
-    def decrypt(self, data: bytes, key: bytes) -> bytes:
+    def decrypt(self, data: bytes) -> bytes:
         raise NotImplementedError
 
     def verify_password(self, password: str, user: User) -> bool:

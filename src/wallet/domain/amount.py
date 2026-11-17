@@ -11,6 +11,7 @@ class Amount:
     def from_str(cls, text: str) -> Amount:
         raise NotImplementedError
 
+    @classmethod
     def from_int(cls, value: int) -> Amount:
         raise NotImplementedError
 

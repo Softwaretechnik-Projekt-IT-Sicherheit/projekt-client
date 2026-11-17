@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Transaction:
-    _id: int|None = None
+    _id: int | None = None
     _txid: str | None = None
     _to_address: list[str] = field(default_factory=list)
     _amount: list[Amount] = field(default_factory=list)
@@ -22,8 +22,15 @@ class Transaction:
     _status: TxStatus = TxStatus.DRAFT
     _created_at: datetime = field(default_factory=datetime.now)
 
-    def __init__(self, amount: Amount, fee: Amount, status: TxStatus, created_at: datetime, change_address: Address, txid: str|None id: int ):
-        self._amount = amount
+    def __init__(
+        self,
+        fee: Amount,
+        status: TxStatus,
+        created_at: datetime,
+        change_address: Address,
+        txid: str | None = None,
+        id: int | None = None,
+    ):
         self._fee = fee
         self._status = status
         self._created_at = created_at
@@ -35,10 +42,10 @@ class Transaction:
     # Getter
     ###############################
 
-    def get_id(self) -> int:
+    def get_id(self) -> int | None:
         return self._id
 
-    def get_txid(self) -> str|None:
+    def get_txid(self) -> str | None:
         return self._txid
 
     def get_to_address(self) -> list[str]:
@@ -50,7 +57,7 @@ class Transaction:
     def get_fee(self) -> Amount:
         return self._fee
 
-    def get_change_address(self) -> Address:
+    def get_change_address(self) -> Address | None:
         return self._change_address
 
     def get_status(self) -> TxStatus:
@@ -63,21 +70,21 @@ class Transaction:
     # Setter
     #################################
 
-    def set_id(self, id: int):
+    def set_id(self, id: int) -> None:
         self._id = id
 
-    def set_txid(self, txid: str):
+    def set_txid(self, txid: str) -> None:
         self._txid = txid
 
-    def add_to_address(self, address: str, amount: Amount):
+    def add_to_address(self, address: str, amount: Amount) -> None:
         self._to_address.append(address)
         self._amount.append(amount)
 
-    def set_fee(self, fee: Amount):
+    def set_fee(self, fee: Amount) -> None:
         self._fee = fee
 
-    def set_change_address(self, change_address: Address):
+    def set_change_address(self, change_address: Address) -> None:
         self._change_address = change_address
 
-    def set_status(self, status: TxStatus):
+    def set_status(self, status: TxStatus) -> None:
         self._status = status
