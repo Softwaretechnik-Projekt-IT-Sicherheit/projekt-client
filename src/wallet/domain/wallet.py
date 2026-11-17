@@ -9,15 +9,23 @@ from wallet.domain.enums import Network
 
 @dataclass
 class Wallet:
-    _id: int|None = None
     _name: str
     _network: Network
     _xpub: str
-    _prkey: str # in WIF (Wallet import Format)
+    _prkey: str  # in WIF (Wallet import Format)
+    _id: int | None = None
     _addresses: list[Address] = field(default_factory=list)
     _index: int = 0
 
-    def __init__(self, name: str, network: Network, xpub: str, prkey: str, index: int, id: int|None = None):
+    def __init__(
+        self,
+        name: str,
+        network: Network,
+        xpub: str,
+        prkey: str,
+        index: int,
+        id: int | None = None,
+    ):
         self._name = name
         self._network = network
         self._id = id
@@ -28,7 +36,7 @@ class Wallet:
     def next_index(self) -> int:
         return self._index
 
-    def increment_index(self):
+    def increment_index(self) -> None:
         self._index += 1
 
     def total_balance(self) -> Amount:
@@ -41,7 +49,7 @@ class Wallet:
     # Getter
     ###################################
 
-    def get_id(self) -> int:
+    def get_id(self) -> int | None:
         return self._id
 
     def get_name(self) -> str:
@@ -54,25 +62,28 @@ class Wallet:
         return self._xpub
 
     def get_prkey(self) -> str:
-        return self.prkey
+        return self._prkey
 
     def get_addresses(self) -> list[Address]:
         return self._addresses
+
+    def get_index(self) -> int:
+        return self._index
 
     ###################################
     # Setter
     ###################################
 
     # Used after saving newly created Wallet
-    def set_id(self, id: int):
+    def set_id(self, id: int) -> None:
         self._id = id
-    
+
     # Used by name change
-    def set_name(self, name: str):
+    def set_name(self, name: str) -> None:
         self._name = name
 
     # Network and Keys can not be changed
 
     # add Address to Wallet
-    def add_address(self, address: Address):
+    def add_address(self, address: Address) -> None:
         self._addresses.append(address)

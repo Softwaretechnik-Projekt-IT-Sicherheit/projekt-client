@@ -66,6 +66,7 @@ class Amount:
 
         return cls(sats=int(sats_decimal))
 
+    @classmethod
     def from_int(cls, value: int) -> Amount:
         raise NotImplementedError
 
