@@ -17,6 +17,9 @@ class Amount:
     def to_btc(self) -> str:
         raise NotImplementedError
 
+    def to_sats(self) -> int:
+        raise NotImplementedError
+
     def __add__(self, other: Amount) -> Amount:
         raise NotImplementedError
 

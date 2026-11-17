@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class Address:
+    _id: int
     _address: str
     _balance: Amount = field(default_factory=lambda: Amount(0))
     _updated_at: datetime = field(default_factory=datetime.now)
@@ -19,7 +20,8 @@ class Address:
     _refund_address: bool = False
     _prkey: str
 
-    def __init__(self, address: str, balance: Amount, updated_at: datetime, private_key: str, refund_address: bool = True):
+    def __init__(self, address: str, balance: Amount, updated_at: datetime, private_key: str, refund_address: bool = True, id: int):
+        self._id = id
         self._address = address
         self._balance = balance
         self._updated_at = updated_at
@@ -29,6 +31,9 @@ class Address:
     ######################
     # Getter
     ######################
+
+    def get_id(self) -> int:
+        return self._id
 
     def get_address(self) -> str:
         return self._address
@@ -54,3 +59,6 @@ class Address:
 
     def add_transaction(self, transaction: Transaction):
         self._transactions.append(transaction)
+
+    def set_id(self, id: int):
+        self._id = id

@@ -9,22 +9,27 @@ from wallet.domain.enums import Network
 
 @dataclass
 class Wallet:
-    _id: int
+    _id: int|None = None
     _name: str
     _network: Network
     _xpub: str
     _prkey: str # in WIF (Wallet import Format)
     _addresses: list[Address] = field(default_factory=list)
+    _index: int = 0
 
-    def __init__(self, name: str, network: Network, xpub: str, prkey, id: int = None):
+    def __init__(self, name: str, network: Network, xpub: str, prkey: str, index: int, id: int|None = None):
         self._name = name
         self._network = network
         self._id = id
         self._xpub = xpub
         self._prkey = prkey
+        self._index = index
 
-    def next_index(self, chain: int) -> int:
-        raise NotImplementedError
+    def next_index(self) -> int:
+        return self._index
+
+    def increment_index(self):
+        self._index += 1
 
     def total_balance(self) -> Amount:
         amount = Amount.from_str("0")
