@@ -1,0 +1,1 @@
+ALTER TABLE Target_Addresses ADD amount INTEGER DEFAULT 0;

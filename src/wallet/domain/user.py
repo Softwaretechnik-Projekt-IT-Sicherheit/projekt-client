@@ -7,14 +7,14 @@ from wallet.domain.wallet import Wallet
 
 @dataclass
 class User:
-    _id: int
+    _id: int|None
     _username: str
     _password_hash: bytes
     _salt: bytes
     _wallets: list[Wallet] = field(default_factory=list)
 
     # creates Wallet object (if not from database: id not set yet)
-    def __init__(self, username: str, password_hash: bytes, salt: bytes, id = None):
+    def __init__(self, username: str, password_hash: bytes, salt: bytes, id: int|None = None):
         self._id = id
         self._username = username
         self._password_hash = password_hash
