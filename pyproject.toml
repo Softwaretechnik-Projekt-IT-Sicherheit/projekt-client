@@ -11,6 +11,7 @@ dependencies = [
     "bitcoinlib==0.7.10",
     "cryptography>=50.0.2",
     "platformdirs>=4.13.5",
+    "python-dotenv>=1.0.0",
 ]
 
 [project.scripts]
