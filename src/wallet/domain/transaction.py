@@ -37,6 +37,8 @@ class Transaction:
         self._txid = txid
         self._id = id
         self._change_address = change_address
+        self._to_address = list()
+        self._amount = list()
 
     ###############################
     # Getter

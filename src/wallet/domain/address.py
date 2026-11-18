@@ -35,6 +35,7 @@ class Address:
         self._updated_at = updated_at
         self._refund_address = refund_address
         self._prkey = private_key
+        self._transactions = list()
 
     ######################
     # Getter

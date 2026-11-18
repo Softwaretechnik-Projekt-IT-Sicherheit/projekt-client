@@ -23,7 +23,7 @@ class Wallet:
         network: Network,
         xpub: str,
         prkey: str,
-        index: int,
+        index: int = 0,
         id: int | None = None,
     ):
         self._name = name
@@ -32,9 +32,10 @@ class Wallet:
         self._xpub = xpub
         self._prkey = prkey
         self._index = index
+        self._addresses = []
 
     def next_index(self) -> int:
-        return self._index
+        return self._index + 1
 
     def increment_index(self) -> None:
         self._index += 1

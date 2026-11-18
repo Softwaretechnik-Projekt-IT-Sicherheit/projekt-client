@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 
 from wallet.domain.address import Address
 from wallet.domain.amount import Amount
@@ -40,7 +41,7 @@ class Database:
         user = None
         if len(rows) == 1:  # User is in Database
             row = rows[0]
-            user = User(row[1], row[2].encode(), row[3].encode(), id=int(rows[0]))
+            user = User(row[1], row[2], row[3], id=row[0])
         elif len(rows) == 2:  # Multiple User with the same in in Database
             raise Exception("Too Many Users")
 
@@ -92,13 +93,16 @@ class Database:
         for row in cursor:
             address = Address(
                 row[1],
-                Amount.from_int(int(row[3])),
-                datetime.utcfromtimestamp(int(row[4])),
+                Amount.from_int(row[3]),
+                datetime.fromtimestamp(row[4], UTC).astimezone(),
                 self._crypto.decrypt(row[2]).decode(),
-                bool(int(row[5])),
-                int(row[0]),
+                bool(row[5]),
+                row[0],
             )
             wallet.add_address(address)
+            temp_id = address.get_id()
+            if temp_id is not None:
+                id_to_address[temp_id] = address
 
         # Get all Transactions for all Addresses in Wallet
         cursor.execute(
@@ -110,22 +114,23 @@ class Database:
 
         for row in cursor:
             transaction = Transaction(
-                Amount.from_int(int(row[2])),
+                Amount.from_int(row[2]),
                 TxStatus(row[3]),
-                datetime.utcfromtimestamp(int(row[4])),
-                id_to_address[int(row[6])],
+                datetime.fromtimestamp(row[4], UTC).astimezone(),
+                id_to_address[row[6]],
                 txid=None if row[1] is None else self._crypto.decrypt(row[1]).decode(),
                 id=row[0],
             )
-            id_to_address[int(row[5])].add_transaction(transaction)
+            id_to_address[row[5]].add_transaction(transaction)
             id = transaction.get_id()
             if id is not None:
                 id_to_transaction[id] = transaction
 
         # Get all to_address
         cursor.execute(
-            "SELECT trans_id, address, amount FROM Target_AddressesWHERE trans_id IN (?)",
-            (", ".join(map(str, id_to_transaction)),),
+            """SELECT trans_id, address, amount FROM Target_Addresses
+            WHERE trans_id IN (SELECT value FROM json_each(?))""",
+            (json.dumps(list(id_to_transaction.keys())),),
         )
 
         for row in cursor:
@@ -133,8 +138,8 @@ class Database:
 
         cursor.close()
 
-    # Safing all Transactions of an Address
-    def safe_transaction(self, address: Address) -> None:
+    # Saving all Transactions of an Address
+    def save_transaction(self, address: Address) -> None:
 
         cursor = self._conn.cursor()
 
@@ -153,7 +158,7 @@ class Database:
                             if transaction.get_txid() is None
                             else self._crypto.encrypt(txid_temp.encode()),
                             transaction.get_fee().to_sats(),
-                            transaction.get_status(),
+                            transaction.get_status().value,
                             transaction.get_created_at().timestamp(),
                             None
                             if transaction.get_change_address() is None
@@ -180,7 +185,8 @@ class Database:
                         transaction.get_to_address(), transaction.get_amount(), strict=True
                     ):
                         cursor.execute(
-                            "INSET INTO Target_Addresses (address, amount, trans_id) VALUES (?, ?)",
+                            """INSERT INTO Target_Addresses (address, amount, trans_id)
+                             VALUES (?, ?, ?)""",
                             (
                                 to_address,
                                 amount.to_sats(),
@@ -191,17 +197,17 @@ class Database:
 
             # Transaction already in Database
             else:
-                # Safe direct Changes
+                # Save direct Changes
                 txid_temp = transaction.get_txid()
                 change_temp = transaction.get_change_address()
                 if txid_temp is not None and change_temp is not None:
                     cursor.execute(
-                        """UPDATE Transactions SET txid = ?, fee = ?, status = ?, created_ad = ?,
+                        """UPDATE Transactions SET txid = ?, fee = ?, status = ?, created_at = ?,
                          change_address = ? WHERE id = ?""",
                         (
                             self._crypto.encrypt(txid_temp.encode()),
                             transaction.get_fee().to_sats(),
-                            transaction.get_status(),
+                            transaction.get_status().value,
                             transaction.get_created_at().timestamp(),
                             change_temp.get_id(),
                             transaction.get_id(),
@@ -252,8 +258,8 @@ class Database:
 
         cursor.close()
 
-    # Safe all Addresses of Wallet
-    def safe_addresses(self, wallet: Wallet) -> None:
+    # Save all Addresses of Wallet
+    def save_addresses(self, wallet: Wallet) -> None:
 
         cursor = self._conn.cursor()
 
@@ -275,7 +281,6 @@ class Database:
                 self._conn.commit()
                 cursor.execute("SELECT id FROM Address ORDER BY id DESC LIMIT 1")
                 address.set_id(cursor.fetchall()[0][0])
-                self.safe_transaction(address)
 
             else:
                 cursor.execute(
@@ -292,12 +297,15 @@ class Database:
                     ),
                 )
                 self._conn.commit()
-                self.safe_transaction(address)
+
+        # needed to be shure that all addresses has an id
+        for address in wallet.get_addresses():
+            self.save_transaction(address)
 
         cursor.close()
 
-    # Safe alle Wallets of User
-    def safe_wallet(self, user: User) -> None:
+    # Save alle Wallets of User
+    def save_wallet(self, user: User) -> None:
 
         cursor = self._conn.cursor()
 
@@ -305,11 +313,11 @@ class Database:
             # Look if Wallet is New
             if wallet.get_id() is None:
                 cursor.execute(
-                    """INSERT INTO Wallet (name, network, prkey, xpub, user, add_num)
+                    """INSERT INTO Wallet (name, network, prkey, xpub, add_num, user)
                      VALUES (?, ?, ?, ?, ?, ?)""",
                     (
                         wallet.get_name(),
-                        wallet.get_network(),
+                        wallet.get_network().value,
                         self._crypto.encrypt(wallet.get_prkey().encode()),
                         wallet.get_xpub(),
                         wallet.get_index(),
@@ -317,9 +325,9 @@ class Database:
                     ),
                 )
                 self._conn.commit()
-                cursor.execute("SELECT id FROM Wallet ORDER BY DESC LIMIT 1")
+                cursor.execute("SELECT id FROM Wallet ORDER BY id DESC LIMIT 1")
                 wallet.set_id(cursor.fetchall()[0][0])
-                self.safe_addresses(wallet)
+                self.save_addresses(wallet)
 
             else:
                 cursor.execute(
@@ -327,27 +335,27 @@ class Database:
                      xpub = ?, user = ? WHERE id = ?""",
                     (
                         wallet.get_name(),
-                        wallet.get_network(),
+                        wallet.get_network().value,
                         self._crypto.encrypt(wallet.get_prkey().encode()),
-                        wallet.get_xpub,
+                        wallet.get_xpub(),
                         user.get_id(),
                         wallet.get_id(),
                     ),
                 )
                 self._conn.commit()
-                self.safe_addresses(wallet)
+                self.save_addresses(wallet)
 
         cursor.close()
 
-    # Safe User
-    def safe_user(self, user: User) -> None:
+    # Save User
+    def save_user(self, user: User) -> None:
 
         cursor = self._conn.cursor()
 
         # Look if User is new
         if user.get_id() is None:
             cursor.execute(
-                "INSERT INTO User (username, password, salt) VALUES (?, ?, ?)",
+                "INSERT INTO User (username, password_hash, salt) VALUES (?, ?, ?)",
                 (
                     user.get_username(),
                     user.get_password_hash(),
@@ -357,11 +365,11 @@ class Database:
             self._conn.commit()
             cursor.execute("SELECT id FROM User ORDER BY id DESC LIMIT 1")
             user.set_id(cursor.fetchall()[0][0])
-            self.safe_wallet(user)
+            self.save_wallet(user)
 
         else:
             cursor.execute(
-                "UPDATE User SET username = ?, password = ?, salt = ? WHERE id = ?",
+                "UPDATE User SET username = ?, password_hash = ?, salt = ? WHERE id = ?",
                 (
                     user.get_username(),
                     user.get_password_hash(),
@@ -370,4 +378,4 @@ class Database:
                 ),
             )
             self._conn.commit()
-            self.safe_wallet(user)
+            self.save_wallet(user)
