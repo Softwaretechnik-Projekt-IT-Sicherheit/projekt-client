@@ -4,6 +4,8 @@ Nicht zu verwechseln mit `wallet.presentation.cli.CLI` – dieses Modul baut die
 Objekte nur zusammen und reicht konkrete Befehle an die Presentation-Schicht weiter.
 """
 
+#Leck eier Opi
+
 from __future__ import annotations
 
 import argparse
