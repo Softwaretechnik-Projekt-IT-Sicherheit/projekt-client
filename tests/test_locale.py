@@ -16,6 +16,14 @@ def test_get_missing_key_returns_visible_fallback() -> None:
     assert Locale().get("gibt.es.nicht") == "[gibt.es.nicht]"
 
 
+def test_get_group_instead_of_text_returns_visible_fallback() -> None:
+    assert Locale().get("help") == "[help]"
+
+
+def test_unknown_language_returns_visible_fallback() -> None:
+    assert Locale("xx").help("send") == "[help.send]"
+
+
 def test_get_missing_placeholder_value_does_not_crash() -> None:
     assert Locale().get("error.unknown_command") == "Unbekannter Befehl: {command}"
 
