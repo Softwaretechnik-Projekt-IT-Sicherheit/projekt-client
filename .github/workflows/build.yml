@@ -104,6 +104,7 @@ jobs:
             --name wallet \
             --paths "$GITHUB_WORKSPACE/src" \
             --collect-submodules wallet \
+            --collect-data wallet \
             --distpath dist \
             --workpath "$RUNNER_TEMP/pyi-build" \
             --specpath "$RUNNER_TEMP" \
