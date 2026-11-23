@@ -33,7 +33,9 @@ def fast_scrypt(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def make_user(crypto: CryptoService, password: str = PASSWORD) -> User:
     salt = crypto.generate_salt()
-    password_hash = crypto.derive_password_hash(password, salt)
+    crypto.set_masterkey(password, salt)
+    password_hash = crypto.derive_password_hash()
+    crypto.clear_masterkey()
     return User(id=1, username="alice", password_hash=password_hash, salt=salt)
 
 
@@ -91,8 +93,10 @@ def test_derive_key_rejects_wrong_salt_length(fast_scrypt: None) -> None:
 def test_password_hash_and_encryption_key_are_separate(fast_scrypt: None) -> None:
     crypto = CryptoService()
     salt = crypto.generate_salt()
-    password_hash = crypto.derive_password_hash(PASSWORD, salt)
-    encryption_key = crypto.derive_encryption_key(PASSWORD, salt)
+    crypto.set_masterkey(PASSWORD, salt)
+    password_hash = crypto.derive_password_hash()
+    encryption_key = crypto.derive_encryption_key()
+    crypto.clear_masterkey()
     assert len(password_hash) == KEY_LENGTH
     assert len(encryption_key) == KEY_LENGTH
     assert password_hash != encryption_key
@@ -102,7 +106,9 @@ def test_password_hash_and_encryption_key_are_separate(fast_scrypt: None) -> Non
 # Testet verschiedene Datenlängen (inkl. leer und 256 Byte)
 def test_encrypt_decrypt_roundtrip(fast_scrypt: None) -> None:
     crypto = CryptoService()
-    key = crypto.derive_encryption_key(PASSWORD, crypto.generate_salt())
+    crypto.set_masterkey(PASSWORD, crypto.generate_salt())
+    key = crypto.derive_encryption_key()
+    crypto.clear_masterkey()
     for data in (b"hello wallet", b"", bytes(range(256))):
         encrypted = crypto.encrypt(data, key)
         assert encrypted != data
@@ -197,3 +203,36 @@ def test_error_messages_do_not_leak_secrets() -> None:
     assert PASSWORD.encode("utf-8") not in message
     assert key not in message
     assert wrong_key not in message
+
+
+# Prüft, dass der masterkey-Getter den gesetzten Masterkey als bytes-Kopie zurückgibt
+def test_masterkey_getter_returns_copy(fast_scrypt: None) -> None:
+    crypto = CryptoService()
+    salt = crypto.generate_salt()
+    crypto.set_masterkey(PASSWORD, salt)
+    key = crypto.masterkey
+    assert key is not None
+    assert len(key) == KEY_LENGTH
+    assert key == crypto.derive_key(PASSWORD, salt)
+    crypto.clear_masterkey()
+
+
+# Prüft, dass masterkey nach clear_masterkey() None zurückgibt
+def test_clear_masterkey_returns_none(fast_scrypt: None) -> None:
+    crypto = CryptoService()
+    crypto.set_masterkey(PASSWORD, crypto.generate_salt())
+    assert crypto.masterkey is not None
+    crypto.clear_masterkey()
+    assert crypto.masterkey is None
+
+
+# Prüft, dass derive_password_hash() ohne gesetzten Masterkey ValueError wirft
+def test_derive_password_hash_without_masterkey_raises() -> None:
+    with pytest.raises(ValueError, match="Masterkey"):
+        CryptoService().derive_password_hash()
+
+
+# Prüft, dass derive_encryption_key() ohne gesetzten Masterkey ValueError wirft
+def test_derive_encryption_key_without_masterkey_raises() -> None:
+    with pytest.raises(ValueError, match="Masterkey"):
+        CryptoService().derive_encryption_key()

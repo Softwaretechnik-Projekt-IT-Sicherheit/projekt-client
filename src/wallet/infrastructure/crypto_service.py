@@ -8,6 +8,7 @@ Fehlermeldungen gelangen. Dieses Modul loggt nicht und wirft nur Exceptions mit
 allgemeinen Meldungen, die keine geheimen Werte enthalten.
 """
 
+
 from __future__ import annotations
 
 import hmac
@@ -44,7 +45,36 @@ HKDF_INFO_ENCRYPTION_KEY = os.environ.get(
 
 
 class CryptoService:
-    """Passwort-Ableitung (scrypt + HKDF) und AES-256-GCM-Verschlüsselung."""
+    """Passwort-Ableitung (scrypt + HKDF) und AES-256-GCM-Verschlüsselung.
+
+    Der scrypt-Masterkey wird als private Instanzvariable gehalten und ist
+    gegen RAM-Dump-Angriffe geschützt, indem er in einem löschbaren `bytearray`
+    gespeichert wird und nach Gebrauch mit `clear_masterkey()` überschrieben
+    werden kann.
+    """
+
+    def __init__(self) -> None:
+        # Privater Masterkey: als bytearray, damit er gezielt überschrieben werden kann
+        self._masterkey: bytearray | None = None
+
+    @property
+    def masterkey(self) -> bytes | None:
+        """Getter für den Masterkey – gibt eine Kopie zurück (kein direktes bytearray)."""
+        if self._masterkey is None:
+            return None
+        return bytes(self._masterkey)
+
+    def set_masterkey(self, password: str, salt: bytes) -> None:
+        """Leitet den Masterkey ab und speichert ihn intern"""
+        key = self.derive_key(password, salt)
+        self._masterkey = bytearray(key)
+
+    def clear_masterkey(self) -> None:
+        """Überschreibt den Masterkey sicher im Speicher"""
+        if self._masterkey is not None:
+            for i in range(len(self._masterkey)):
+                self._masterkey[i] = 0
+            self._masterkey = None
 
     def generate_salt(self) -> bytes:
         """Erzeugt ein neues 16-Byte-Salt aus `os.urandom`."""
@@ -57,13 +87,17 @@ class CryptoService:
         kdf = Scrypt(salt=salt, length=KEY_LENGTH, n=SCRYPT_N, r=SCRYPT_R, p=SCRYPT_P)
         return kdf.derive(password.encode("utf-8"))
 
-    def derive_password_hash(self, password: str, salt: bytes) -> bytes:
-        """Passwort-Hash (32 Byte) zur Speicherung – getrennt vom Verschlüsselungsschlüssel."""
-        return self._hkdf(self.derive_key(password, salt), HKDF_INFO_PASSWORD_HASH)
+    def derive_password_hash(self) -> bytes:
+        return self._hkdf(self._require_masterkey(), HKDF_INFO_PASSWORD_HASH)
 
-    def derive_encryption_key(self, password: str, salt: bytes) -> bytes:
-        """Verschlüsselungsschlüssel (AES-256) – getrennt vom Passwort-Hash."""
-        return self._hkdf(self.derive_key(password, salt), HKDF_INFO_ENCRYPTION_KEY)
+    def derive_encryption_key(self) -> bytes:
+        return self._hkdf(self._require_masterkey(), HKDF_INFO_ENCRYPTION_KEY)
+
+    def _require_masterkey(self) -> bytes:
+        """Gibt den gespeicherten Masterkey zurück oder wirft ValueError."""
+        if self._masterkey is None:
+            raise ValueError("Masterkey nicht gesetzt – zuerst set_masterkey() aufrufen")
+        return bytes(self._masterkey)
 
     def encrypt(self, data: bytes, key: bytes) -> bytes:
         """Verschlüsselt mit AES-256-GCM; die zufällige 12-Byte-Nonce steht vor dem Ciphertext.
@@ -89,9 +123,16 @@ class CryptoService:
         return AESGCM(key).decrypt(nonce, ciphertext, None)
 
     def verify_password(self, password: str, user: User) -> bool:
-        """Prüft das Passwort konstantzeitlich gegen den gespeicherten Hash."""
-        candidate = self.derive_password_hash(password, user.salt)
-        return hmac.compare_digest(candidate, user.password_hash)
+        """
+        Leitet den Masterkey temporär ab, berechnet den Passwort-Hash.
+        Der Masterkey wird anschließend sicher gelöscht.
+        """
+        try:
+            self.set_masterkey(password, user.salt)
+            candidate = self.derive_password_hash()
+            return hmac.compare_digest(candidate, user.password_hash)
+        finally:
+            self.clear_masterkey()
 
     @staticmethod
     def _hkdf(master_key: bytes, info: bytes) -> bytes:
