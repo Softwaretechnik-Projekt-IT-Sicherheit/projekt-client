@@ -1,0 +1,16 @@
+{
+  "error": {
+    "unknown_command": "Unbekannter Befehl: {command}"
+  },
+  "help": {
+    "register": "Registriert einen neuen Benutzer. Das Passwort wird verdeckt abgefragt.",
+    "login": "Meldet einen Benutzer an. Das Passwort wird verdeckt abgefragt.",
+    "create_wallet": "Erstellt ein neues Wallet mit dem angegebenen Namen. Optional: Anzahl der Wörter der Wiederherstellungsphrase (Standard: 12).",
+    "restore_wallet": "Stellt ein Wallet aus seiner Wiederherstellungsphrase wieder her.",
+    "show_address": "Zeigt die Empfangsadresse eines Wallets an. Optional wird eine neue Adresse erzeugt.",
+    "show_balance": "Zeigt den Kontostand eines Wallets an.",
+    "show_transactions": "Zeigt Transaktionen an.",
+    "create_transactions": "Erstellt eine neue Transaktion.",
+    "send": "Sendet einen Betrag von einem Wallet an eine Bitcoin-Adresse. Vor dem Senden wird eine Bestätigung abgefragt."
+  }
+}
