@@ -8,7 +8,6 @@ Fehlermeldungen gelangen. Dieses Modul loggt nicht und wirft nur Exceptions mit
 allgemeinen Meldungen, die keine geheimen Werte enthalten.
 """
 
-
 from __future__ import annotations
 
 import hmac
