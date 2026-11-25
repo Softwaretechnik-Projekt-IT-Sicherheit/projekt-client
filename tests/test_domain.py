@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import sys
-from contextlib import ExitStack
 from datetime import datetime
-from unittest.mock import patch
 
 import pytest
 
@@ -58,7 +55,7 @@ def create_wallet() -> Wallet:
 def create_address() -> Address:
     return Address(
         "bc1qfc26xzrm4s6grnsmdawk9efwe2j7f96za39h75",
-        Amount.from_int(100),
+        Amount.from_str("1,00"),
         datetime.strptime("2024-06-15 10:30:00", "%Y-%m-%d %H:%M:%S"),
         "cQF9SNKk8RANH6tgJGsddDoy9DC5h4qUwh9wmo5NSjJbQu8H6ZMZ",
         False,
@@ -69,13 +66,13 @@ def create_address() -> Address:
 def create_transaction(create_address) -> Transaction:
     change = Address(
         "bc1qfc26xzrm4s6grnsmdawk9efwe2j7f96za39h75",
-        Amount.from_int(5),
+        Amount.from_str("0,005"),
         datetime.strptime("2024-06-15 10:30:00", "%Y-%m-%d %H:%M:%S"),
         "cQF9SNKk8RANH6tgJGsddDoy9DC5h4qUwh9wmo5NSjJbQu8H6ZMZ",
         True,
     )
     return Transaction(
-        Amount.from_int(1),
+        Amount.from_str("0,001"),
         TxStatus.DRAFT,
         datetime.strptime("2024-06-15 10:30:00", "%Y-%m-%d %H:%M:%S"),
         change,
@@ -160,7 +157,7 @@ def test_wallet_methods(create_wallet) -> None:
     assert wallet.next_index() == 1
     wallet.increment_index()
     assert wallet.next_index() == 2
-    assert wallet.total_balance().to_sats() == 0
+    assert wallet.total_balance().to_btc() == "0.00000000"
 
 
 def test_user_add_wallet(create_user, create_wallet) -> None:
@@ -184,7 +181,7 @@ def test_address_creation(create_address) -> None:
     assert address.get_id() is None
     assert address.get_updated_at() == datetime.strptime("2024-06-15 10:30:00", "%Y-%m-%d %H:%M:%S")
     assert address.get_address() == "bc1qfc26xzrm4s6grnsmdawk9efwe2j7f96za39h75"
-    assert address.get_balance().to_sats() == 100
+    assert address.get_balance().to_btc() == "1.00000000"
     assert address.get_prkey() == "cQF9SNKk8RANH6tgJGsddDoy9DC5h4qUwh9wmo5NSjJbQu8H6ZMZ"
     assert address.is_refund_address() is False
 
@@ -205,7 +202,7 @@ def test_wallet_add_address(create_wallet, create_address):
     wallet.add_address(create_address)
     assert wallet.get_addresses() == [create_address]
 
-    assert wallet.total_balance().to_sats() == 100
+    assert wallet.total_balance().to_btc() == "1.00000000"
 
 
 def test_transaction_creation(create_transaction) -> None:
@@ -213,7 +210,7 @@ def test_transaction_creation(create_transaction) -> None:
 
     assert trans.get_id() is None
     assert trans.get_txid() == "bla bla bla"
-    assert trans.get_fee().to_sats() == 1
+    assert trans.get_fee().to_btc() == "0.00100000"
     assert trans.get_change_address().get_address() == "bc1qfc26xzrm4s6grnsmdawk9efwe2j7f96za39h75"
     assert trans.get_status() == TxStatus.DRAFT
     assert trans.get_created_at() == datetime.strptime("2024-06-15 10:30:00", "%Y-%m-%d %H:%M:%S")
@@ -227,18 +224,18 @@ def test_transaction_setter(create_transaction, create_address) -> None:
     trans.set_txid("test")
     assert trans.get_txid() == "test"
     trans.set_fee(Amount.from_str("1000"))
-    assert trans.get_fee().to_sats() == 1000
+    assert trans.get_fee().to_btc() == "1000.00000000"
     trans.set_change_address(create_address)
     assert trans.get_change_address() == create_address
     trans.set_status(TxStatus.BROADCAST)
     assert trans.get_status() == TxStatus.BROADCAST
 
-    trans.add_to_address("Addresse 1", Amount.from_int(10))
-    trans.add_to_address("Addresse 2", Amount.from_int(11))
+    trans.add_to_address("Addresse 1", Amount.from_str("0,010"))
+    trans.add_to_address("Addresse 2", Amount.from_str("0,011"))
 
     assert trans.get_to_address() == ["Addresse 1", "Addresse 2"]
-    assert trans.get_amount()[0].to_sats() == 10
-    assert trans.get_amount()[1].to_sats() == 11
+    assert trans.get_amount()[0].to_btc() == "0.01000000"
+    assert trans.get_amount()[1].to_btc() == "0.01100000"
 
 
 def test_address_add_transaction(create_address, create_transaction) -> None:
