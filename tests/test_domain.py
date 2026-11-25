@@ -54,49 +54,6 @@ def create_wallet() -> Wallet:
     )
 
 
-class DummyAmount:
-    sats: int
-
-    def __init__(self, v):
-        self.sats = v
-
-    @classmethod
-    def from_str(cls, text: str) -> Amount:
-        return cls(int(text))
-
-    @classmethod
-    def from_int(cls, value: int) -> Amount:
-        return cls(value)
-
-    def to_sats(self) -> int:
-        return self.sats
-
-    def __add__(self, other: Amount) -> Amount:
-        self.sats += other.to_sats()
-        return self
-
-
-# Replaces Amount Class for Testing
-@pytest.fixture(scope="session", autouse=True)
-def replace_unimplemented_amount():
-    with ExitStack() as stack:
-        # Durchsucht alle bereits geladenen Module deines Projekts
-        for mod_name, mod in list(sys.modules.items()):
-            if (
-                mod_name.startswith("wallet")
-                and mod is not None
-                and getattr(mod, "Amount", None) is Amount
-            ):
-                stack.enter_context(patch.object(mod, "Amount", DummyAmount))
-        yield
-
-
-@pytest.fixture(autouse=True)
-def replace_unimplemented_amount_in_file():
-    with patch(f"{__name__}.Amount", new=DummyAmount):
-        yield DummyAmount
-
-
 @pytest.fixture
 def create_address() -> Address:
     return Address(
