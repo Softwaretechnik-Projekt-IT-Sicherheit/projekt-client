@@ -1,0 +1,1 @@
+ALTER TABLE Wallet ADD add_num INTEGER DEFAULT 0;
