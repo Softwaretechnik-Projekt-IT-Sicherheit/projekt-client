@@ -66,7 +66,7 @@ class Database:
                 row[1],
                 Network(row[2]),
                 row[4],
-                self._crypto.decrypt(row[3]).decode(),
+                self._crypto.decrypt(row[3], self._crypto.derive_encryption_key()).decode(),
                 int(row[5]),
                 id=int(row[0]),
             )
@@ -93,9 +93,9 @@ class Database:
         for row in cursor:
             address = Address(
                 row[1],
-                Amount.from_int(row[3]),
+                Amount.from_str(row[3]),
                 datetime.fromtimestamp(row[4], UTC).astimezone(),
-                self._crypto.decrypt(row[2]).decode(),
+                self._crypto.decrypt(row[2], self._crypto.derive_encryption_key()).decode(),
                 bool(row[5]),
                 row[0],
             )
@@ -114,11 +114,13 @@ class Database:
 
         for row in cursor:
             transaction = Transaction(
-                Amount.from_int(row[2]),
+                Amount.from_str(row[2]),
                 TxStatus(row[3]),
                 datetime.fromtimestamp(row[4], UTC).astimezone(),
                 id_to_address[row[6]],
-                txid=None if row[1] is None else self._crypto.decrypt(row[1]).decode(),
+                txid=None
+                if row[1] is None
+                else self._crypto.decrypt(row[1], self._crypto.derive_encryption_key()).decode(),
                 id=row[0],
             )
             id_to_address[row[5]].add_transaction(transaction)
@@ -134,7 +136,7 @@ class Database:
         )
 
         for row in cursor:
-            id_to_transaction[int(row[0])].add_to_address(row[1], Amount.from_int(int(row[2])))
+            id_to_transaction[int(row[0])].add_to_address(row[1], Amount.from_str(row[2]))
 
         cursor.close()
 
@@ -156,8 +158,10 @@ class Database:
                         (
                             None
                             if transaction.get_txid() is None
-                            else self._crypto.encrypt(txid_temp.encode()),
-                            transaction.get_fee().to_sats(),
+                            else self._crypto.encrypt(
+                                txid_temp.encode(), self._crypto.derive_encryption_key()
+                            ),
+                            transaction.get_fee().to_btc(),
                             transaction.get_status().value,
                             transaction.get_created_at().timestamp(),
                             None
@@ -189,7 +193,7 @@ class Database:
                              VALUES (?, ?, ?)""",
                             (
                                 to_address,
-                                amount.to_sats(),
+                                amount.to_btc(),
                                 id,
                             ),
                         )
@@ -205,8 +209,10 @@ class Database:
                         """UPDATE Transactions SET txid = ?, fee = ?, status = ?, created_at = ?,
                          change_address = ? WHERE id = ?""",
                         (
-                            self._crypto.encrypt(txid_temp.encode()),
-                            transaction.get_fee().to_sats(),
+                            self._crypto.encrypt(
+                                txid_temp.encode(), self._crypto.derive_encryption_key()
+                            ),
+                            transaction.get_fee().to_btc(),
                             transaction.get_status().value,
                             transaction.get_created_at().timestamp(),
                             change_temp.get_id(),
@@ -225,11 +231,11 @@ class Database:
                     for row in cursor.fetchall():
                         try:
                             location = transaction.get_to_address().index(row[1])
-                            if transaction.get_amount()[location].to_sats() != int(row[2]):
+                            if transaction.get_amount()[location].to_btc() != row[2]:
                                 cursor.execute(
                                     "UPDATE Target_Addresses SET amount = ? WHERE id = ?",
                                     (
-                                        transaction.get_amount()[location].to_sats(),
+                                        transaction.get_amount()[location].to_btc(),
                                         row[0],
                                     ),
                                 )
@@ -251,7 +257,7 @@ class Database:
                                 to_address,
                                 transaction.get_amount()[
                                     transaction.get_to_address().index(to_address)
-                                ].to_sats(),
+                                ].to_btc(),
                             ),
                         )
                         self._conn.commit()
@@ -271,8 +277,10 @@ class Database:
                      wallet) VALUES (?, ?, ?, ?, ?, ?)""",
                     (
                         address.get_address(),
-                        self._crypto.encrypt(address.get_prkey().encode()),
-                        address.get_balance().to_sats(),
+                        self._crypto.encrypt(
+                            address.get_prkey().encode(), self._crypto.derive_encryption_key()
+                        ),
+                        address.get_balance().to_btc(),
                         address.get_updated_at().timestamp(),
                         int(address.is_refund_address()),
                         wallet.get_id(),
@@ -288,8 +296,10 @@ class Database:
                      updated_at = ?, refund_address = ?, wallet = ? WHERE id = ?""",
                     (
                         address.get_address(),
-                        self._crypto.encrypt(address.get_prkey().encode()),
-                        address.get_balance().to_sats(),
+                        self._crypto.encrypt(
+                            address.get_prkey().encode(), self._crypto.derive_encryption_key()
+                        ),
+                        address.get_balance().to_btc(),
                         address.get_updated_at().timestamp(),
                         int(address.is_refund_address()),
                         wallet.get_id(),
@@ -318,7 +328,9 @@ class Database:
                     (
                         wallet.get_name(),
                         wallet.get_network().value,
-                        self._crypto.encrypt(wallet.get_prkey().encode()),
+                        self._crypto.encrypt(
+                            wallet.get_prkey().encode(), self._crypto.derive_encryption_key()
+                        ),
                         wallet.get_xpub(),
                         wallet.get_index(),
                         user.get_id(),
@@ -336,7 +348,9 @@ class Database:
                     (
                         wallet.get_name(),
                         wallet.get_network().value,
-                        self._crypto.encrypt(wallet.get_prkey().encode()),
+                        self._crypto.encrypt(
+                            wallet.get_prkey().encode(), self._crypto.derive_encryption_key()
+                        ),
                         wallet.get_xpub(),
                         user.get_id(),
                         wallet.get_id(),

@@ -66,10 +66,6 @@ class Amount:
 
         return cls(sats=int(sats_decimal))
 
-    @classmethod
-    def from_int(cls, value: int) -> Amount:
-        raise NotImplementedError
-
     def to_btc(self) -> str:
         """Liefert den Betrag formatiert als BTC mit exakt 8 Nachkommastellen als String"""
         decimal = Decimal(self.sats) / Decimal(COIN_IN_SATS)

@@ -127,9 +127,9 @@ class CryptoService:
         Der Masterkey wird anschließend sicher gelöscht.
         """
         try:
-            self.set_masterkey(password, user.salt)
+            self.set_masterkey(password, user.get_salt())
             candidate = self.derive_password_hash()
-            return hmac.compare_digest(candidate, user.password_hash)
+            return hmac.compare_digest(candidate, user.get_password_hash())
         finally:
             self.clear_masterkey()
 

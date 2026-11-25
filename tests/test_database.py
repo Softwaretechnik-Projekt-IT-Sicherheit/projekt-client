@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import os
-import sys
-from contextlib import ExitStack
+import re
 from datetime import datetime
-from unittest.mock import patch
 
 import pytest
 
@@ -18,88 +16,18 @@ from wallet.infrastructure.crypto_service import CryptoService
 from wallet.infrastructure.database import Database
 
 
-class DummyAmount:
-    sats: int
-
-    def __init__(self, v):
-        self.sats = v
-
-    @classmethod
-    def from_str(cls, text: str) -> Amount:
-        return cls(int(text))
-
-    @classmethod
-    def from_int(cls, value: int) -> Amount:
-        return cls(value)
-
-    def to_sats(self) -> int:
-        return self.sats
-
-    def __add__(self, other: Amount) -> Amount:
-        self.sats += other.to_sats()
-        return self
-
-
-# Replaces Amount Class for Testing
-@pytest.fixture(scope="session", autouse=True)
-def replace_unimplemented_amount():
-    with ExitStack() as stack:
-        # Durchsucht alle bereits geladenen Module deines Projekts
-        for mod_name, mod in list(sys.modules.items()):
-            if (
-                mod_name.startswith("wallet")
-                and mod is not None
-                and getattr(mod, "Amount", None) is Amount
-            ):
-                stack.enter_context(patch.object(mod, "Amount", DummyAmount))
-        yield
-
-
-@pytest.fixture(autouse=True)
-def replace_unimplemented_amount_in_file():
-    with patch(f"{__name__}.Amount", new=DummyAmount):
-        yield DummyAmount
-
-
-class DummyCrypto:
-    def decrypt(self, v: bytes) -> bytes:
-        return v
-
-    def encrypt(self, v: bytes) -> bytes:
-        return v
-
-
-# Replaces CryptoService Class for Testing
-@pytest.fixture(scope="session", autouse=True)
-def replace_unimplemented_crypto_service():
-    with ExitStack() as stack:
-        # Durchsucht alle bereits geladenen Module deines Projekts
-        for mod_name, mod in list(sys.modules.items()):
-            if (
-                mod_name.startswith("wallet")
-                and mod is not None
-                and getattr(mod, "CryptoService", None) is CryptoService
-            ):
-                stack.enter_context(patch.object(mod, "CryptoService", DummyCrypto))
-        yield
-
-
-@pytest.fixture(autouse=True)
-def replace_unimplemented_crypto_service_in_file():
-    with patch(f"{__name__}.CryptoService", new=DummyCrypto):
-        yield DummyCrypto
-
-
 @pytest.fixture
 def create_database() -> Database:
-    db = Database(":memory:", CryptoService())
+    crys = CryptoService()
+    crys.set_masterkey("Ich bin dumm", crys.generate_salt())
+    db = Database(":memory:", crys)
 
     cursor = db._conn.cursor()
     # create Databasestructor in memory
     files = []
     for i in os.scandir(f"{os.path.dirname(os.path.realpath(__file__))}/../databaseconf"):
         files.append(i.name)
-    files.sort()
+    files = sorted(files, key=lambda w: int(re.findall(r"\d+", w)[0]))
     for file in files:
         with open(
             f"{os.path.dirname(os.path.realpath(__file__))}/../databaseconf/{file}"
@@ -139,7 +67,7 @@ def test_saving_and_loading(create_database):
 
     a1 = Address(
         "1JNu6ZfjSUaGNC3STDE65Qi5KbTfrAwZnq",
-        Amount.from_int(100),
+        Amount.from_str("0,1"),
         datetime.strptime("2024-06-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         "KzednhSr14eYguFdE4gqEpiPm5s8KcP4zpAFhjcpopB1PwmPtc4P",
         False,
@@ -147,7 +75,7 @@ def test_saving_and_loading(create_database):
 
     a2 = Address(
         "1PCXzsvUmfBG2gbwfmAUUyb4ioCpR4DBAw",
-        Amount.from_int(10),
+        Amount.from_str("0,010"),
         datetime.strptime("2025-06-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         "L5Fezj241uUwueSaMRAuQkEvvTGHLSganStwJ3YQUkYCTKLvgHmT",
         False,
@@ -155,7 +83,7 @@ def test_saving_and_loading(create_database):
 
     a3 = Address(
         "1LGQawfD6MSNLczHXsRurrg293dYTbGNQB",
-        Amount.from_int(4),
+        Amount.from_str("0,004"),
         datetime.strptime("2024-06-15 12:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         "KxNb5M3gfzNa31qK1SuekvbwTNdYxjdWxThvktTCkiUdkfp8dNLA",
         True,
@@ -163,7 +91,7 @@ def test_saving_and_loading(create_database):
 
     a4 = Address(
         "1NWwAoJL6iFHHjuKWG1gYiipMDcAsErXfL",
-        Amount.from_int(1),
+        Amount.from_str("0,001"),
         datetime.strptime("2024-06-15 12:32:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         "KzjGe1UxYbm9QHfjDUetoxXGbviutxZJRWQssAAztfn9sLXMXhtN",
         True,
@@ -171,7 +99,7 @@ def test_saving_and_loading(create_database):
 
     a5 = Address(
         "1EVKSBgNVq1do2w29z5kzA3qQE8QG2poYB",
-        Amount.from_int(2),
+        Amount.from_str("0,002"),
         datetime.strptime("2024-09-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         "KzoiY64uovMggNP5EHyuBT9nMPfm5F76XguUKQVy7k2LWmD8uDXx",
         True,
@@ -179,7 +107,7 @@ def test_saving_and_loading(create_database):
 
     a6 = Address(
         "1EuQPtszhgTX4dPxKMxpCXcfnMNxuFEaHQ",
-        Amount.from_int(3),
+        Amount.from_str("0,003"),
         datetime.strptime("2020-06-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         "L4xZPuoXLTHWtwpyk84Ro6UraBejoRDhFu3nL7s4MLoTBDbMyTGV",
         True,
@@ -193,7 +121,7 @@ def test_saving_and_loading(create_database):
     w2.add_address(a6)
 
     t1 = Transaction(
-        Amount.from_int(1),
+        Amount.from_str("0,001"),
         TxStatus.CONFIRMED,
         datetime.strptime("2019-06-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         a3,
@@ -201,10 +129,10 @@ def test_saving_and_loading(create_database):
     )
 
     a1.add_transaction(t1)
-    t1.add_to_address("1AUXNskqF3n3xmWNNQTLxa3WGDgXCekipg", Amount.from_int(10))
+    t1.add_to_address("1AUXNskqF3n3xmWNNQTLxa3WGDgXCekipg", Amount.from_str("0,10"))
 
     t2 = Transaction(
-        Amount.from_int(2),
+        Amount.from_str("0,002"),
         TxStatus.BROADCAST,
         datetime.strptime("2018-06-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         a5,
@@ -213,10 +141,10 @@ def test_saving_and_loading(create_database):
 
     a1.add_transaction(t2)
     a3.add_transaction(t2)
-    t2.add_to_address("189ucFbJhXth3r3hQyQ2heH5NxeN5qbtvH", Amount.from_int(12))
+    t2.add_to_address("189ucFbJhXth3r3hQyQ2heH5NxeN5qbtvH", Amount.from_str("0,12"))
 
     t3 = Transaction(
-        Amount.from_int(3),
+        Amount.from_str("0,003"),
         TxStatus.BROADCAST,
         datetime.strptime("2017-06-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         a4,
@@ -224,11 +152,11 @@ def test_saving_and_loading(create_database):
     )
 
     a2.add_transaction(t3)
-    t3.add_to_address("18o4qdkMHFrN5Z7Nq5BRkUqo7oWkHWSAUP", Amount.from_int(20))
-    t3.add_to_address("1258Gyo9qUWdC3MP4sjxiTFWttPuqZmwm9", Amount.from_int(22))
+    t3.add_to_address("18o4qdkMHFrN5Z7Nq5BRkUqo7oWkHWSAUP", Amount.from_str("0,20"))
+    t3.add_to_address("1258Gyo9qUWdC3MP4sjxiTFWttPuqZmwm9", Amount.from_str("0,22"))
 
     t4 = Transaction(
-        Amount.from_int(4),
+        Amount.from_str("0,004"),
         TxStatus.DRAFT,
         datetime.strptime("2016-06-15 10:30:00", "%Y-%m-%d %H:%M:%S").astimezone(),
         a6,
@@ -236,7 +164,7 @@ def test_saving_and_loading(create_database):
     )
 
     a4.add_transaction(t4)
-    t4.add_to_address("1612hpcx7xuBry5o3ydrC7P4Dccv1jM4hH", Amount.from_int(15))
+    t4.add_to_address("1612hpcx7xuBry5o3ydrC7P4Dccv1jM4hH", Amount.from_str("0,15"))
 
     for i in range(2):  # Two Times, because once without and once with id set
         db.save_user(user)
@@ -305,7 +233,7 @@ def test_saving_and_loading(create_database):
                     if i.get_id() == j.get_id():
                         assert i._address == j._address
                         assert i._prkey == j._prkey
-                        assert i._balance.to_sats() == j._balance.to_sats()
+                        assert i._balance.to_btc() == j._balance.to_btc()
                         assert i._updated_at == j._updated_at
                         assert i._refund_address == j._refund_address
 
@@ -324,14 +252,14 @@ def test_saving_and_loading(create_database):
                                         assert (
                                             first_transaction._amount[
                                                 first_transaction._to_address.index(m)
-                                            ].to_sats()
+                                            ].to_btc()
                                             == second_transaction._amount[
                                                 second_transaction._to_address.index(m)
-                                            ].to_sats()
+                                            ].to_btc()
                                         )
                                     assert (
-                                        first_transaction._fee.to_sats()
-                                        == second_transaction._fee.to_sats()
+                                        first_transaction._fee.to_btc()
+                                        == second_transaction._fee.to_btc()
                                     )
                                     if first_transaction._change_address is None:
                                         assert second_transaction._change_address is None

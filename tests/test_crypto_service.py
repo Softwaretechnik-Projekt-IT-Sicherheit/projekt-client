@@ -183,9 +183,9 @@ def test_verify_password(fast_scrypt: None) -> None:
 def test_verify_password_with_tampered_hash(fast_scrypt: None) -> None:
     crypto = CryptoService()
     user = make_user(crypto)
-    tampered = bytearray(user.password_hash)
+    tampered = bytearray(user.get_password_hash())
     tampered[0] ^= 0x01
-    user.password_hash = bytes(tampered)
+    user.set_password_hash(bytes(tampered))
     assert crypto.verify_password(PASSWORD, user) is False
 
 
