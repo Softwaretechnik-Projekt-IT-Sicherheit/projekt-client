@@ -54,6 +54,7 @@ flyway -configFiles="flyway.toml" migrate # erzeugt Datenbank
 | `npm run smoke` | Kurzer Starttest (`--version`) |
 | `npm test` | Tests ausführen |
 | `npm run test:cov` | Tests mit Testabdeckung (Coverage) |
+| `npm run test:testnet` | Integrationstests gegen testnet4 (Netz nötig) |
 | `npm run lint` | Linting inkl. Security-Regeln |
 | `npm run lint:fix` | Linting mit automatischer Korrektur |
 | `npm run format` | Code formatieren |
