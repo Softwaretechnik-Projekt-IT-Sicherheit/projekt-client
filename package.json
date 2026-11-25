@@ -9,6 +9,7 @@
 
     "test": "uv run pytest",
     "test:cov": "uv run pytest --cov=wallet --cov-report=term-missing",
+    "test:testnet": "uv run pytest -m testnet -v",
 
     "lint": "uv run ruff check .",
     "lint:fix": "uv run ruff check . --fix",
