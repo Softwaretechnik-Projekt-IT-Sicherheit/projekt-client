@@ -105,6 +105,7 @@ jobs:
             --paths "$GITHUB_WORKSPACE/src" \
             --collect-submodules wallet \
             --collect-data wallet \
+            --collect-all bitcoinlib \
             --distpath dist \
             --workpath "$RUNNER_TEMP/pyi-build" \
             --specpath "$RUNNER_TEMP" \
