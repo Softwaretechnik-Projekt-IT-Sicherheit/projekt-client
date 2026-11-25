@@ -7,7 +7,6 @@ from wallet.domain.amount import Amount
 
 @dataclass(frozen=True)
 class Utxo:
-
     txid: str
     output_n: int
     address: str

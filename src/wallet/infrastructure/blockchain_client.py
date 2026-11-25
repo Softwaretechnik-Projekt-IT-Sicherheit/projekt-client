@@ -43,7 +43,6 @@ def _network_errors() -> Iterator[None]:
 
 
 class BlockchainClient:
-
     def __init__(
         self,
         network: Network,
