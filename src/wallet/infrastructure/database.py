@@ -63,9 +63,9 @@ class Database:
 
         for row in cursor:
             wallet = Wallet(
-                row[1],
+                self._crypto.decrypt(row[1], self._crypto.derive_encryption_key()).decode(),
                 Network(row[2]),
-                row[4],
+                self._crypto.decrypt(row[4], self._crypto.derive_encryption_key()).decode(),
                 self._crypto.decrypt(row[3], self._crypto.derive_encryption_key()).decode(),
                 int(row[5]),
                 id=int(row[0]),
@@ -92,8 +92,10 @@ class Database:
 
         for row in cursor:
             address = Address(
-                row[1],
-                Amount.from_str(row[3]),
+                self._crypto.decrypt(row[1], self._crypto.derive_encryption_key()).decode(),
+                Amount.from_str(
+                    self._crypto.decrypt(row[3], self._crypto.derive_encryption_key()).decode()
+                ),
                 datetime.fromtimestamp(row[4], UTC).astimezone(),
                 self._crypto.decrypt(row[2], self._crypto.derive_encryption_key()).decode(),
                 bool(row[5]),
@@ -114,7 +116,9 @@ class Database:
 
         for row in cursor:
             transaction = Transaction(
-                Amount.from_str(row[2]),
+                Amount.from_str(
+                    self._crypto.decrypt(row[2], self._crypto.derive_encryption_key()).decode()
+                ),
                 TxStatus(row[3]),
                 datetime.fromtimestamp(row[4], UTC).astimezone(),
                 id_to_address[row[6]],
@@ -136,7 +140,12 @@ class Database:
         )
 
         for row in cursor:
-            id_to_transaction[int(row[0])].add_to_address(row[1], Amount.from_str(row[2]))
+            id_to_transaction[int(row[0])].add_to_address(
+                self._crypto.decrypt(row[1], self._crypto.derive_encryption_key()).decode(),
+                Amount.from_str(
+                    self._crypto.decrypt(row[2], self._crypto.derive_encryption_key()).decode(),
+                ),
+            )
 
         cursor.close()
 
@@ -161,7 +170,10 @@ class Database:
                             else self._crypto.encrypt(
                                 txid_temp.encode(), self._crypto.derive_encryption_key()
                             ),
-                            transaction.get_fee().to_btc(),
+                            self._crypto.encrypt(
+                                transaction.get_fee().to_btc().encode(),
+                                self._crypto.derive_encryption_key(),
+                            ),
                             transaction.get_status().value,
                             transaction.get_created_at().timestamp(),
                             None
@@ -192,8 +204,12 @@ class Database:
                             """INSERT INTO Target_Addresses (address, amount, trans_id)
                              VALUES (?, ?, ?)""",
                             (
-                                to_address,
-                                amount.to_btc(),
+                                self._crypto.encrypt(
+                                    to_address.encode(), self._crypto.derive_encryption_key()
+                                ),
+                                self._crypto.encrypt(
+                                    amount.to_btc().encode(), self._crypto.derive_encryption_key()
+                                ),
                                 id,
                             ),
                         )
@@ -212,7 +228,10 @@ class Database:
                             self._crypto.encrypt(
                                 txid_temp.encode(), self._crypto.derive_encryption_key()
                             ),
-                            transaction.get_fee().to_btc(),
+                            self._crypto.encrypt(
+                                transaction.get_fee().to_btc().encode(),
+                                self._crypto.derive_encryption_key(),
+                            ),
                             transaction.get_status().value,
                             transaction.get_created_at().timestamp(),
                             change_temp.get_id(),
@@ -254,10 +273,17 @@ class Database:
                              VALUES (?, ?, ?)""",
                             (
                                 transaction.get_id(),
-                                to_address,
-                                transaction.get_amount()[
-                                    transaction.get_to_address().index(to_address)
-                                ].to_btc(),
+                                self._crypto.encrypt(
+                                    to_address.encode(), self._crypto.derive_encryption_key()
+                                ),
+                                self._crypto.encrypt(
+                                    transaction.get_amount()[
+                                        transaction.get_to_address().index(to_address)
+                                    ]
+                                    .to_btc()
+                                    .encode(),
+                                    self._crypto.derive_encryption_key(),
+                                ),
                             ),
                         )
                         self._conn.commit()
@@ -276,11 +302,16 @@ class Database:
                     """INSERT INTO Address (address, prkey, balance, updated_at, refund_address,
                      wallet) VALUES (?, ?, ?, ?, ?, ?)""",
                     (
-                        address.get_address(),
+                        self._crypto.encrypt(
+                            address.get_address().encode(), self._crypto.derive_encryption_key()
+                        ),
                         self._crypto.encrypt(
                             address.get_prkey().encode(), self._crypto.derive_encryption_key()
                         ),
-                        address.get_balance().to_btc(),
+                        self._crypto.encrypt(
+                            address.get_balance().to_btc().encode(),
+                            self._crypto.derive_encryption_key(),
+                        ),
                         address.get_updated_at().timestamp(),
                         int(address.is_refund_address()),
                         wallet.get_id(),
@@ -295,11 +326,16 @@ class Database:
                     """UPDATE Address SET address = ?, prkey = ?, balance = ?,
                      updated_at = ?, refund_address = ?, wallet = ? WHERE id = ?""",
                     (
-                        address.get_address(),
+                        self._crypto.encrypt(
+                            address.get_address().encode(), self._crypto.derive_encryption_key()
+                        ),
                         self._crypto.encrypt(
                             address.get_prkey().encode(), self._crypto.derive_encryption_key()
                         ),
-                        address.get_balance().to_btc(),
+                        self._crypto.encrypt(
+                            address.get_balance().to_btc().encode(),
+                            self._crypto.derive_encryption_key(),
+                        ),
                         address.get_updated_at().timestamp(),
                         int(address.is_refund_address()),
                         wallet.get_id(),
@@ -326,12 +362,16 @@ class Database:
                     """INSERT INTO Wallet (name, network, prkey, xpub, add_num, user)
                      VALUES (?, ?, ?, ?, ?, ?)""",
                     (
-                        wallet.get_name(),
+                        self._crypto.encrypt(
+                            wallet.get_name().encode(), self._crypto.derive_encryption_key()
+                        ),
                         wallet.get_network().value,
                         self._crypto.encrypt(
                             wallet.get_prkey().encode(), self._crypto.derive_encryption_key()
                         ),
-                        wallet.get_xpub(),
+                        self._crypto.encrypt(
+                            wallet.get_xpub().encode(), self._crypto.derive_encryption_key()
+                        ),
                         wallet.get_index(),
                         user.get_id(),
                     ),
@@ -346,12 +386,16 @@ class Database:
                     """UPDATE Wallet SET name = ?, network = ?, prkey = ?,
                      xpub = ?, user = ? WHERE id = ?""",
                     (
-                        wallet.get_name(),
+                        self._crypto.encrypt(
+                            wallet.get_name().encode(), self._crypto.derive_encryption_key()
+                        ),
                         wallet.get_network().value,
                         self._crypto.encrypt(
                             wallet.get_prkey().encode(), self._crypto.derive_encryption_key()
                         ),
-                        wallet.get_xpub(),
+                        self._crypto.encrypt(
+                            wallet.get_xpub().encode(), self._crypto.derive_encryption_key()
+                        ),
                         user.get_id(),
                         wallet.get_id(),
                     ),
